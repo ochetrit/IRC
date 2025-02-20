@@ -78,7 +78,6 @@ int	main(int ac, char **av)
 		return 1;
 	}
 
-	std::map<int, t_clients> clients;
 
 	while (true)
 	{
@@ -87,19 +86,6 @@ int	main(int ac, char **av)
 			perror("Poll error");
 			break;
 		}
-
-		// if (fds[0].revents & POLLIN) {
-        //     // Une nouvelle connexion arrive
-        //     struct sockaddr_in client_addr;
-        //     socklen_t client_len = sizeof(client_addr);
-        //     client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-        //     if (client_fd < 0) {
-        //         perror("Accept failed");
-        //         continue;
-        //     }
-        //     std::cout << "Nouveau client connecté !\n";
-        //     fds[1].fd = client_fd;
-        //     fds[1].events = POLLIN; // Surveiller les messages du client
 		if (irc.getFds()[0].revents & POLLIN)
 		{
 			struct sockaddr_in client_addr;
@@ -114,36 +100,46 @@ int	main(int ac, char **av)
 			print(GREEN << "New client accepted");
 			irc.add_fds(client_fd);
 			irc.set_client_empty(irc.getNbclients());
-			char buffer[100];
-			memset(buffer, 0, sizeof(buffer));
-			int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-			if (bytes_received <= 0)
-			{
-				print(RED << "Client déconnecté" << RESET);
-				break;
-			}
+			std::string str = "Set a username\n";
+			send(client_fd, str.c_str(), str.size(), 0);	
 		}
 
 		// std::string str = "Set a nickname\n";
 		// send(client_fd, str.c_str(), str.size(), 0);
-
-		t_clients	tmp;
-
-		tmp._nickname = buffer;
-
-		str = "Set a username\n";
-		send(client_fd, str.c_str(), str.size(), 0);
-
-		memset(buffer, 0, sizeof(buffer));
-		bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-        if (bytes_received <= 0)
+		for (unsigned int i = 1; i < irc.getNbclients(); i++)
 		{
-            print(RED << "Client déconnecté" << RESET);
-            break;
-        }
-		print(GREEN << buffer);
-		tmp._username = buffer;
-		clients.insert(std::make_pair(client_fd, tmp));
+			if (irc.getFds()[i].revents & POLLIN)
+			{
+				char buffer[100];
+				memset(buffer, 0, sizeof(buffer));
+				int bytes_received = recv(irc.getClientfd(i), buffer, sizeof(buffer) - 1, 0);
+				if (bytes_received <= 0)
+				{
+					print(RED << "Client déconnecté" << RESET);
+					close(irc.getFds()[i].fd);
+					irc.getFds()[i] = irc.getFds()[irc.getNbclients() - 1];
+					irc.decremente_nbclient();
+					continue;
+				}
+				buffer[bytes_received] = '\0';
+				print(YELLOW << buffer << RESET);
+				if (irc.getClient(i)._nickname.empty()) {
+					std::string tmp(buffer);
+                    irc.set_client_nickname(i, tmp);
+                    std::string str = "Set a username\n";
+                    send(irc.getFds()[i].fd, str.c_str(), str.size(), 0);
+                }
+                else if (irc.getClient(i)._username.empty()) {
+					std::string tmp(buffer);
+					irc.set_client_username(i, tmp);
+                	print(MAG << "Client " << i << " connecté en tant que:" << irc.getClient(i)._nickname << " " << irc.getClient(i)._username);
+                }
+				else
+				{
+					print(RED << buffer);
+				}
+			}
+		}
 	}
 	//close(client_fd);
 	close(server_fd);

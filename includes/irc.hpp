@@ -64,11 +64,14 @@ class IRC
 	unsigned int	getPort();
 	unsigned int	getNbclients();
 	struct pollfd	*getFds();
+	t_clients		getClient(unsigned int client);
+	int				getClientfd(unsigned int client);
 
 	void	add_fds(int fd);
-	void	set_client_empty(int client);
-	void	set_client_nickname(std::string &buffer);
-	void	set_client_username(std::string &buffer);
+	void	set_client_empty(unsigned int client);
+	void	set_client_nickname(unsigned int client, std::string &buffer);
+	void	set_client_username(unsigned int client, std::string &buffer);
+	void	decremente_nbclient();
 	//void	setServeven
 };
 

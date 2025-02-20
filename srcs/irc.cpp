@@ -38,6 +38,8 @@ unsigned int	IRC::getNbclients(){return _nb_clients;}
 
 struct pollfd	*IRC::getFds(){return _fds;}
 
+t_clients		IRC::getClient(unsigned int client){return _clients[client];}
+
 void	IRC::add_fds(int fd)
 {
 	_fds[_nb_clients].fd = fd;
@@ -45,8 +47,20 @@ void	IRC::add_fds(int fd)
 	_nb_clients++;
 }
 
-void	IRC::set_client_empty(int client)
+void	IRC::set_client_empty(unsigned int client)
 {
-	_clients[client]._nickname.empty();
-	_clients[client]._username.empty();
+	_clients[client]._nickname.clear();
+	_clients[client]._username.clear();
 }
+
+void	IRC::set_client_nickname(unsigned int client, std::string &std){
+	_clients[client]._nickname = std;
+}
+
+void	IRC::set_client_username(unsigned int client, std::string &std){
+	_clients[client]._username = std;
+}
+
+void	IRC::decremente_nbclient(){_nb_clients--;}
+
+int		IRC::getClientfd(unsigned int client){return _fds[client].fd;}
