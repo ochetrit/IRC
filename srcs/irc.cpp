@@ -14,7 +14,7 @@
 
 IRC::IRC(){}
 
-IRC::IRC(unsigned int port, std::string password):_port(port), _password(password){}
+IRC::IRC(unsigned int port, std::string password):_port(port), _password(password), _nb_clients(0){}
 
 IRC::~IRC(){
 	print("The server is closed");
@@ -33,3 +33,20 @@ IRC	&IRC::operator=(const IRC &other)
 }
 
 unsigned int	IRC::getPort(){return _port;}
+
+unsigned int	IRC::getNbclients(){return _nb_clients;}
+
+struct pollfd	*IRC::getFds(){return _fds;}
+
+void	IRC::add_fds(int fd)
+{
+	_fds[_nb_clients].fd = fd;
+	_fds[_nb_clients].events = POLLIN;
+	_nb_clients++;
+}
+
+void	IRC::set_client_empty(int client)
+{
+	_clients[client]._nickname.empty();
+	_clients[client]._username.empty();
+}

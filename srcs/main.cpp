@@ -67,6 +67,8 @@ int	main(int ac, char **av)
 		return 4;
 	}
 
+	irc.add_fds(server_fd);
+
 	print(YELLOW << "Waiting for clients...");
 
 	if (listen(server_fd, FD_MAX) < 0)
@@ -78,32 +80,55 @@ int	main(int ac, char **av)
 
 	std::map<int, t_clients> clients;
 
-	while (1)
+	while (true)
 	{
-		struct sockaddr_in client_addr;
-		socklen_t client_len = sizeof(client_addr);
-		int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-		if (client_fd < 0)
-		{
-			perror("Error accept");
-			close(server_fd);
-			return 1;
+		int ret = poll(irc.getFds(), irc.getNbclients(), 0);
+		if (ret < 0) {
+			perror("Poll error");
+			break;
 		}
-		print(GREEN << "New client accepted");
 
-		std::string str = "Set a nickname\n";
-		send(client_fd, str.c_str(), str.size(), 0);
+		// if (fds[0].revents & POLLIN) {
+        //     // Une nouvelle connexion arrive
+        //     struct sockaddr_in client_addr;
+        //     socklen_t client_len = sizeof(client_addr);
+        //     client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+        //     if (client_fd < 0) {
+        //         perror("Accept failed");
+        //         continue;
+        //     }
+        //     std::cout << "Nouveau client connecté !\n";
+        //     fds[1].fd = client_fd;
+        //     fds[1].events = POLLIN; // Surveiller les messages du client
+		if (irc.getFds()[0].revents & POLLIN)
+		{
+			struct sockaddr_in client_addr;
+			socklen_t client_len = sizeof(client_addr);
+			int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+			if (client_fd < 0)
+			{
+				perror("Error accept");
+				close(server_fd);
+				return 1;
+			}
+			print(GREEN << "New client accepted");
+			irc.add_fds(client_fd);
+			irc.set_client_empty(irc.getNbclients());
+			char buffer[100];
+			memset(buffer, 0, sizeof(buffer));
+			int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+			if (bytes_received <= 0)
+			{
+				print(RED << "Client déconnecté" << RESET);
+				break;
+			}
+		}
+
+		// std::string str = "Set a nickname\n";
+		// send(client_fd, str.c_str(), str.size(), 0);
 
 		t_clients	tmp;
 
-		char buffer[100];
-		memset(buffer, 0, sizeof(buffer));
-		int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-        if (bytes_received <= 0)
-		{
-            print(RED << "Client déconnecté" << RESET);
-            break;
-        }
 		tmp._nickname = buffer;
 
 		str = "Set a username\n";
@@ -116,6 +141,7 @@ int	main(int ac, char **av)
             print(RED << "Client déconnecté" << RESET);
             break;
         }
+		print(GREEN << buffer);
 		tmp._username = buffer;
 		clients.insert(std::make_pair(client_fd, tmp));
 	}

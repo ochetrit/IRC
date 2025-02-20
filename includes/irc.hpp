@@ -24,12 +24,13 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <map>
+#include <poll.h>
 #include "clients.hpp"
 
 #define print(x) std::cout << x << std::endl
 #define err(x) std::cerr << x << std::endl
 #define MAX_PORT 65535
-#define FD_MAX 1020
+#define FD_MAX 1021
 #define MAG "\e[0;35m"
 #define RESET   "\033[0m"
 #define RED     "\033[31m"
@@ -45,6 +46,9 @@ class IRC
 
 	unsigned int _port;
 	std::string _password;
+	struct pollfd _fds[FD_MAX];
+	t_clients	_clients[FD_MAX];
+	unsigned int	_nb_clients;
 
 	IRC();
 
@@ -58,7 +62,14 @@ class IRC
 	IRC	&operator=(const IRC &other);
 
 	unsigned int	getPort();
+	unsigned int	getNbclients();
+	struct pollfd	*getFds();
 
+	void	add_fds(int fd);
+	void	set_client_empty(int client);
+	void	set_client_nickname(std::string &buffer);
+	void	set_client_username(std::string &buffer);
+	//void	setServeven
 };
 
 
