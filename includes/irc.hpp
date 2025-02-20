@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ochetrit <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/18 13:24:39 by ochetrit         ###   ########.fr       */
+/*   Updated: 2025/02/20 17:07:17 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <map>
+#include <sstream>
+#include <algorithm>
 #include <poll.h>
 #include "clients.hpp"
 
@@ -37,6 +39,8 @@
 #define GREEN   "\033[32m"
 #define YELLOW  "\033[33m"
 #define BLUE    "\033[34m"
+#define PURPLE "\033[35m"
+
 
 // irssi USE THIS CLIENT
 
