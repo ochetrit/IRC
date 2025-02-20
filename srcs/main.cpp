@@ -81,12 +81,12 @@ int	main(int ac, char **av)
 
 	while (true)
 	{
-		int ret = poll(irc.getFds(), irc.getNbclients(), 0);
+		int ret = poll(irc.getFds(), irc.getNbclients(), 0); /// Pas sur de l utilisation de poll demander a chatgpt
 		if (ret < 0) {
 			perror("Poll error");
 			break;
 		}
-		if (irc.getFds()[0].revents & POLLIN)
+		if (irc.getFds()[0].revents & POLLIN) // Check de nv client
 		{
 			struct sockaddr_in client_addr;
 			socklen_t client_len = sizeof(client_addr);
@@ -100,19 +100,17 @@ int	main(int ac, char **av)
 			print(GREEN << "New client accepted");
 			irc.add_fds(client_fd);
 			irc.set_client_empty(irc.getNbclients());
-			std::string str = "Set a username\n";
+			std::string str = "Set a nickname\n";
 			send(client_fd, str.c_str(), str.size(), 0);	
 		}
 
-		// std::string str = "Set a nickname\n";
-		// send(client_fd, str.c_str(), str.size(), 0);
-		for (unsigned int i = 1; i < irc.getNbclients(); i++)
+		for (unsigned int i = 1; i < irc.getNbclients(); i++) // Se balader parmi tous les clients
 		{
 			if (irc.getFds()[i].revents & POLLIN)
 			{
 				char buffer[100];
 				memset(buffer, 0, sizeof(buffer));
-				int bytes_received = recv(irc.getClientfd(i), buffer, sizeof(buffer) - 1, 0);
+				int bytes_received = recv(irc.getClientfd(i), buffer, sizeof(buffer) - 1, 0); //recevoir un message envoye par le client (ca marche pas)
 				if (bytes_received <= 0)
 				{
 					print(RED << "Client déconnecté" << RESET);
@@ -123,7 +121,7 @@ int	main(int ac, char **av)
 				}
 				buffer[bytes_received] = '\0';
 				print(YELLOW << buffer << RESET);
-				if (irc.getClient(i)._nickname.empty()) {
+				if (irc.getClient(i)._nickname.empty()) { //set nickname mais ca marche pas pck le buffer se remplit pas de la bonne maniere
 					std::string tmp(buffer);
                     irc.set_client_nickname(i, tmp);
                     std::string str = "Set a username\n";
