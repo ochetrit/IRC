@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/20 17:07:17 by nino             ###   ########.fr       */
+/*   Updated: 2025/02/24 16:40:34 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,13 +70,25 @@ class IRC
 	struct pollfd	*getFds();
 	t_clients		getClient(unsigned int client);
 	int				getClientfd(unsigned int client);
+	std::string		getPassword();
 
 	void	add_fds(int fd);
 	void	set_client_empty(unsigned int client);
 	void	set_client_nickname(unsigned int client, std::string &buffer);
 	void	set_client_username(unsigned int client, std::string &buffer);
+	void	set_client_pass(unsigned int client, std::string &buffer);
 	void	decremente_nbclient();
 	//void	setServeven
+
+	// main func
+	int init_server_socket(IRC &irc);
+	void handle_new_client(IRC &irc, int server_fd);
+	void handle_client_command(IRC &irc, int client_index, const std::string &command);
+	void handle_client_data(IRC &irc, int client_index);
+	void poll_clients(IRC &irc, int server_fd);
+	void remove_client(unsigned int client_index);
+
+	
 };
 
 

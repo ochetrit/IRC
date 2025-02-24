@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ochetrit <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/18 13:36:14 by ochetrit         ###   ########.fr       */
+/*   Updated: 2025/02/24 15:15:49 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,10 @@ struct pollfd	*IRC::getFds(){return _fds;}
 
 t_clients		IRC::getClient(unsigned int client){return _clients[client];}
 
+std::string IRC::getPassword() {
+	return this->_password;
+}
+
 void	IRC::add_fds(int fd)
 {
 	_fds[_nb_clients].fd = fd;
@@ -59,6 +63,10 @@ void	IRC::set_client_nickname(unsigned int client, std::string &std){
 
 void	IRC::set_client_username(unsigned int client, std::string &std){
 	_clients[client]._username = std;
+}
+
+void	IRC::set_client_pass(unsigned int client, std::string &std) {
+	_clients[client]._pass = std;
 }
 
 void	IRC::decremente_nbclient(){_nb_clients--;}
