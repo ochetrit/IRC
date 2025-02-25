@@ -72,3 +72,21 @@ void	IRC::set_client_pass(unsigned int client, std::string &std) {
 void	IRC::decremente_nbclient(){_nb_clients--;}
 
 int		IRC::getClientfd(unsigned int client){return _fds[client].fd;}
+
+bool	IRC::compare_nickname(std::string nickname)
+{
+	for (unsigned int i = 1; i < _nb_clients; i++){
+		if (_clients[i]._nickname == nickname)
+			return false;
+	}
+	return true;
+}
+
+bool	IRC::compare_username(std::string username)
+{
+	for (unsigned int i = 1; i < _nb_clients; i++){
+		if (_clients[i]._username == username)
+			return false;
+	}
+	return true;
+}

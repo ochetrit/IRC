@@ -78,6 +78,8 @@ class IRC
 	void	set_client_username(unsigned int client, std::string &buffer);
 	void	set_client_pass(unsigned int client, std::string &buffer);
 	void	decremente_nbclient();
+	bool	compare_nickname(std::string nickname);
+	bool	compare_username(std::string username);
 	//void	setServeven
 
 	// main func
