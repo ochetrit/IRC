@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/25 13:56:26 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/25 15:49:07 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,13 +84,12 @@ class IRC
 	//void	setServeven
 
 	// main func
-	int init_server_socket(IRC &irc);
-	void handle_new_client(IRC &irc, int server_fd);
-	void handle_client_command(IRC &irc, int client_index, const std::string &command);
-	void handle_client_data(IRC &irc, int client_index);
-	void poll_clients(IRC &irc, int server_fd);
+	int init_server_socket();
+	void handle_new_client(int server_fd);
+	void handle_client_command(int client_index, const std::string &command);
+	void handle_client_data(int client_index);
+	void poll_clients(int server_fd);
 	void remove_client(unsigned int client_index);
-
 	
 };
 

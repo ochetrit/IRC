@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/24 15:15:49 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/25 16:12:48 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ void	IRC::add_fds(int fd)
 {
 	_fds[_nb_clients].fd = fd;
 	_fds[_nb_clients].events = POLLIN;
+	_fds[_nb_clients].revents = 0;
 	_nb_clients++;
 }
 
