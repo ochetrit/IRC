@@ -1,6 +1,6 @@
 NAME = irc
 
-SRCS = srcs/main.cpp srcs/irc.cpp
+SRCS = srcs/main.cpp srcs/irc.cpp srcs/channel.cpp
 
 OBJ = $(SRCS:.cpp=.o)
 
