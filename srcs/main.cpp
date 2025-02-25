@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/25 16:11:11 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/25 16:40:30 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,13 +117,13 @@ void IRC::handle_client_command(int client_index, const std::string &command) {
 		send(getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
 	} else if (command.find("QUIT") == 0){
 		std::string quit = command.substr(6);
-		print(PURPLE << irc.getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
+		print(PURPLE << getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
 	} else if (command.find("JOIN") == 0){
 		std::string name = command.substr(6);
-		if (irc.getChannel().find(name) == irc.getChannel().end())
-			irc.add_channel(name, client_index);
+		if (getChannel().find(name) == getChannel().end())
+			add_channel(name, client_index);
 		else
-			irc.add_client_channel(name, client_index);
+			add_client_channel(name, client_index);
 	} else {
 		print(RED << "Wrong command: " << command << RESET);
 	}
