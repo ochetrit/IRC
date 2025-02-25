@@ -28,12 +28,14 @@
 #include <algorithm>
 #include <poll.h>
 #include <signal.h>
+#include <map>
 #include "clients.hpp"
 
 #define print(x) std::cout << x << std::endl
 #define err(x) std::cerr << x << std::endl
 #define MAX_PORT 65535
 #define FD_MAX 1021
+#define Map std::map<std::string, t_channel>
 #define MAG "\e[0;35m"
 #define RESET   "\033[0m"
 #define RED     "\033[31m"
@@ -54,6 +56,8 @@ class IRC
 	struct pollfd _fds[FD_MAX];
 	t_clients	_clients[FD_MAX];
 	unsigned int	_nb_clients;
+	Map	channels;
+
 
 	IRC();
 
@@ -72,6 +76,7 @@ class IRC
 	t_clients		getClient(unsigned int client);
 	int				getClientfd(unsigned int client);
 	std::string		getPassword();
+	Map				getChannel();
 
 	void	add_fds(int fd);
 	void	set_client_empty(unsigned int client);
@@ -90,6 +95,8 @@ class IRC
 	void handle_client_data(int client_index);
 	void poll_clients(int server_fd);
 	void remove_client(unsigned int client_index);
+	void	add_channel(std::string name, unsigned int client);
+	void	add_client_channel(std::string name, unsigned int client);
 	
 };
 

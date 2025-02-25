@@ -14,6 +14,7 @@
 # define CLIENTS_HPP
 
 #include "irc.hpp"
+#define FD_MAX 1021
 
 typedef struct s_clients
 {
@@ -21,5 +22,18 @@ typedef struct s_clients
 	std::string	_username;
 	std::string _pass;
 }	t_clients;
+
+typedef struct s_channel
+{
+	std::string 	_topic;
+	bool			_invite_only;
+	bool			_channel_key;
+	std::string		_password;
+	bool			_user_limit;
+	unsigned int	_max_user;
+	bool				_client_indexs[FD_MAX];
+	bool				_fd_operator[FD_MAX];
+}	t_channel;
+
 
 #endif

@@ -44,6 +44,8 @@ std::string IRC::getPassword() {
 	return this->_password;
 }
 
+Map		IRC::getChannel(){return channels;}
+
 void	IRC::add_fds(int fd)
 {
 	_fds[_nb_clients].fd = fd;
