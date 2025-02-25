@@ -55,7 +55,7 @@ class IRC
 	struct pollfd _fds[FD_MAX];
 	t_clients	_clients[FD_MAX];
 	unsigned int	_nb_clients;
-	Map	channels;
+	Map	_channels;
 
 
 	IRC();
@@ -72,10 +72,10 @@ class IRC
 	unsigned int	getPort();
 	unsigned int	getNbclients();
 	struct pollfd	*getFds();
-	t_clients		getClient(unsigned int client);
+	t_clients		&getClient(unsigned int client);
 	int				getClientfd(unsigned int client);
 	std::string		getPassword();
-	Map				getChannel();
+	Map				&getChannel();
 
 	void	add_fds(int fd);
 	void	set_client_empty(unsigned int client);
@@ -96,6 +96,7 @@ class IRC
 	void	remove_client(unsigned int client_index);
 	void	add_channel(std::string name, unsigned int client);
 	void	add_client_channel(std::string name, unsigned int client);
+	void	send_message(std::string &channel, std::string &message, unsigned int client);
 
 	
 };

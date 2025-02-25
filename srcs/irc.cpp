@@ -38,13 +38,13 @@ unsigned int	IRC::getNbclients(){return _nb_clients;}
 
 struct pollfd	*IRC::getFds(){return _fds;}
 
-t_clients		IRC::getClient(unsigned int client){return _clients[client];}
+t_clients		&IRC::getClient(unsigned int client){return _clients[client];}
 
 std::string IRC::getPassword() {
 	return this->_password;
 }
 
-Map		IRC::getChannel(){return channels;}
+Map		&IRC::getChannel(){return _channels;}
 
 void	IRC::add_fds(int fd)
 {
