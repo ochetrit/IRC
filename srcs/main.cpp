@@ -116,6 +116,12 @@ void IRC::handle_client_command(IRC &irc, int client_index, const std::string &c
 	} else if (command.find("QUIT") == 0){
 		std::string quit = command.substr(6);
 		print(PURPLE << irc.getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
+	} else if (command.find("JOIN") == 0){
+		std::string name = command.substr(6);
+		if (irc.getChannel().find(name) == irc.getChannel().end())
+			irc.add_channel(name, client_index);
+		else
+			irc.add_client_channel(name, client_index);
 	} else {
 		print(RED << "Wrong command: " << command << RESET);
 	}
