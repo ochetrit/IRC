@@ -6,11 +6,13 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/24 16:40:24 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/25 14:37:18 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/irc.hpp"
+
+
 
 bool	check_args(char *av)
 {
@@ -181,17 +183,39 @@ void IRC::poll_clients(IRC &irc, int server_fd) {
 	}
 }
 
+IRC* g_irc = NULL;
+
+void	sign_handler(int signum) {
+	print(RED << "\nCaught Ctrl + C (signal " << signum << "), cleaning up..." << RESET);
+
+	if (g_irc) {
+		for (unsigned int i = 0; i < g_irc->getNbclients(); i++)
+			close(g_irc->getFds()[i].fd);
+	}
+	exit(0);
+}
+
 int main(int ac, char **av) {
 	if (!check_arguments(ac, av))
 		return 1;
-
+		
 	IRC irc(atoi(av[1]), av[2]);
+	g_irc = &irc;
+	
+	struct sigaction sigIntHandler;
+	sigIntHandler.sa_handler = sign_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(SIGINT, &sigIntHandler, NULL);
+	
 	int server_fd = irc.init_server_socket(irc);
 	if (server_fd < 0)
 		return 2;
 
 	irc.add_fds(server_fd);  // Ajoute le serveur au poll
 	irc.poll_clients(irc, server_fd);
+
+	
 
 	close(server_fd);
 	return 0;

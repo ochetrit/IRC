@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/24 16:40:34 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/25 13:56:26 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@
 #include <sstream>
 #include <algorithm>
 #include <poll.h>
+#include <signal.h>
 #include "clients.hpp"
 
 #define print(x) std::cout << x << std::endl
