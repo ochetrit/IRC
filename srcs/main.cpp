@@ -6,11 +6,13 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/24 16:40:24 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/25 16:11:11 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/irc.hpp"
+
+
 
 bool	check_args(char *av)
 {
@@ -41,7 +43,7 @@ bool check_arguments(int ac, char **av) {
 	return true;
 }
 
-int IRC::init_server_socket(IRC &irc) {
+int IRC::init_server_socket() {
 	int server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (server_fd == -1) {
 		perror("Socket failed");
@@ -51,7 +53,7 @@ int IRC::init_server_socket(IRC &irc) {
 	struct sockaddr_in server_addr;
 	server_addr.sin_family = AF_INET;
 	inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
-	server_addr.sin_port = htons(irc.getPort());
+	server_addr.sin_port = htons(getPort());
 
 	if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
 		perror("Error bind");
@@ -68,7 +70,7 @@ int IRC::init_server_socket(IRC &irc) {
 	return server_fd;
 }
 
-void IRC::handle_new_client(IRC &irc, int server_fd) {
+void IRC::handle_new_client(int server_fd) {
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
@@ -78,41 +80,41 @@ void IRC::handle_new_client(IRC &irc, int server_fd) {
 		return;
 	}
 
-	irc.add_fds(client_fd);
-	irc.set_client_empty(irc.getNbclients());
+	add_fds(client_fd);
+	set_client_empty(getNbclients());
 	print(GREEN << "New client accepted" << RESET);
 }
 
-void IRC::handle_client_command(IRC &irc, int client_index, const std::string &command) {
+void IRC::handle_client_command(int client_index, const std::string &command) {
 	if (command.compare(0, 4, "CAP ") == 0 && command.find("LS") != std::string::npos) {
 		print("ignore CAP LS");
 	} else if (command.find("PASS ") == 0) {
 		std::string clientPass = command.substr(5);
-		irc.set_client_pass(client_index, clientPass);
-		if (irc.getClient(client_index)._pass != irc.getPassword()) {
+		set_client_pass(client_index, clientPass);
+		if (getClient(client_index)._pass != getPassword()) {
 			print(RED << "Connection with client " << client_index << " failed: wrong password " << RESET);
 			std::string errMsg = "ERROR :Wrong password\r\n";
-			send(irc.getFds()[client_index].fd, errMsg.c_str(), errMsg.size(), 0);
-			close(irc.getFds()[client_index].fd);
-			irc.getFds()[client_index] = irc.getFds()[irc.getNbclients() - 1];
-			irc.decremente_nbclient();
+			send(getFds()[client_index].fd, errMsg.c_str(), errMsg.size(), 0);
+			close(getFds()[client_index].fd);
+			getFds()[client_index] = getFds()[getNbclients() - 1];
+			decremente_nbclient();
 		}
 	} else if (command.find("NICK ") == 0) {
 		std::string nickname = command.substr(5);
-		while (!irc.compare_nickname(nickname))
+		while (!compare_nickname(nickname))
 			nickname = "_" + nickname;
-		irc.set_client_nickname(client_index, nickname);
+		set_client_nickname(client_index, nickname);
 	} else if (command.find("USER ") == 0) {
 		std::string username = command.substr(5, command.find(' ', 5) - 5);
-		while (!irc.compare_username(username))
+		while (!compare_username(username))
 			username = "_" + username;
-		irc.set_client_username(client_index, username);
-		std::string welcome = ":server 001 " + irc.getClient(client_index)._nickname +
-			" :" + irc.getClient(client_index)._nickname + " [" + username + "@localhost] Bienvenue !\r\n";
-		send(irc.getFds()[client_index].fd, welcome.c_str(), welcome.size(), 0);
+		set_client_username(client_index, username);
+		std::string welcome = ":server 001 " + getClient(client_index)._nickname +
+			" :" + getClient(client_index)._nickname + " [" + username + "@localhost] Bienvenue !\r\n";
+		send(getFds()[client_index].fd, welcome.c_str(), welcome.size(), 0);
 	} else if (command.find("PING ") == 0) {
 		std::string pongResponse = "PONG :" + command.substr(5) + "\r\n";
-		send(irc.getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
+		send(getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
 	} else if (command.find("QUIT") == 0){
 		std::string quit = command.substr(6);
 		print(PURPLE << irc.getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
@@ -143,12 +145,12 @@ void IRC::remove_client(unsigned int client_index) {
 }
 
 
-void IRC::handle_client_data(IRC &irc, int client_index) {
+void IRC::handle_client_data(int client_index) {
 	char buffer[512] = {0};
-	int bytes_received = recv(irc.getClientfd(client_index), buffer, sizeof(buffer) - 1, 0);
+	int bytes_received = recv(getClientfd(client_index), buffer, sizeof(buffer) - 1, 0);
 
 	if (bytes_received <= 0) {
-		irc.remove_client(client_index);
+		remove_client(client_index);
 		return;
 	}
 	
@@ -161,43 +163,65 @@ void IRC::handle_client_data(IRC &irc, int client_index) {
 	while (std::getline(iss, command)) {
 		if (!command.empty()) {
 			print(YELLOW << "Commande reçue: [" << command << "]" << RESET);
-			handle_client_command(irc, client_index, command);
+			handle_client_command(client_index, command);
 		}
 	}
 }
 
-void IRC::poll_clients(IRC &irc, int server_fd) {
+void IRC::poll_clients(int server_fd) {
 	print(YELLOW << "En attente des clients..." << RESET);
+	
 	while (true) {
-		int ret = poll(irc.getFds(), irc.getNbclients(), 0);
+		int ret = poll(getFds(), getNbclients(), 0);
 		if (ret < 0) {
 			perror("Erreur poll");
 			break;
 		}
 
 		// Connexion d'un nouveau client
-		if (irc.getFds()[0].revents & POLLIN)
-			handle_new_client(irc, server_fd);
+		if (getFds()[0].revents & POLLIN)
+			handle_new_client(server_fd);
 
 		// Données des clients existants
-		for (unsigned int i = 1; i < irc.getNbclients(); i++) {
-			if (irc.getFds()[i].revents & POLLIN)
-				handle_client_data(irc, i);
+		for (unsigned int i = 1; i < getNbclients(); i++) {
+			if (getFds()[i].revents & POLLIN)
+				handle_client_data(i);
 		}
 	}
+}
+
+IRC* g_irc = NULL;
+
+void	sign_handler(int signum) {
+	print(RED << "\nCaught Ctrl + C (signal " << signum << "), cleaning up..." << RESET);
+
+	if (g_irc) {
+		for (unsigned int i = 0; i < g_irc->getNbclients(); i++)
+			close(g_irc->getFds()[i].fd);
+	}
+	exit(0);
 }
 
 int main(int ac, char **av) {
 	if (!check_arguments(ac, av))
 		return 1;
-
+		
 	IRC irc(atoi(av[1]), av[2]);
-	int server_fd = irc.init_server_socket(irc);
+	g_irc = &irc;
+	
+	struct sigaction sigIntHandler;
+	sigIntHandler.sa_handler = sign_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(SIGINT, &sigIntHandler, NULL);
+	
+	int server_fd = irc.init_server_socket();
 	if (server_fd < 0)
 		return 2;
 
 	irc.add_fds(server_fd);  // Ajoute le serveur au poll
-	irc.poll_clients(irc, server_fd);
+	irc.poll_clients(server_fd);
+
 
 	close(server_fd);
 	return 0;
