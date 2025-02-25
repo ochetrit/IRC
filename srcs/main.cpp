@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/25 16:40:30 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/25 17:53:09 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,49 +85,115 @@ void IRC::handle_new_client(int server_fd) {
 	print(GREEN << "New client accepted" << RESET);
 }
 
-void IRC::handle_client_command(int client_index, const std::string &command) {
-	if (command.compare(0, 4, "CAP ") == 0 && command.find("LS") != std::string::npos) {
-		print("ignore CAP LS");
-	} else if (command.find("PASS ") == 0) {
-		std::string clientPass = command.substr(5);
-		set_client_pass(client_index, clientPass);
-		if (getClient(client_index)._pass != getPassword()) {
-			print(RED << "Connection with client " << client_index << " failed: wrong password " << RESET);
-			std::string errMsg = "ERROR :Wrong password\r\n";
-			send(getFds()[client_index].fd, errMsg.c_str(), errMsg.size(), 0);
-			close(getFds()[client_index].fd);
-			getFds()[client_index] = getFds()[getNbclients() - 1];
-			decremente_nbclient();
-		}
-	} else if (command.find("NICK ") == 0) {
-		std::string nickname = command.substr(5);
-		while (!compare_nickname(nickname))
-			nickname = "_" + nickname;
-		set_client_nickname(client_index, nickname);
-	} else if (command.find("USER ") == 0) {
-		std::string username = command.substr(5, command.find(' ', 5) - 5);
-		while (!compare_username(username))
-			username = "_" + username;
-		set_client_username(client_index, username);
-		std::string welcome = ":server 001 " + getClient(client_index)._nickname +
-			" :" + getClient(client_index)._nickname + " [" + username + "@localhost] Bienvenue !\r\n";
-		send(getFds()[client_index].fd, welcome.c_str(), welcome.size(), 0);
-	} else if (command.find("PING ") == 0) {
-		std::string pongResponse = "PONG :" + command.substr(5) + "\r\n";
-		send(getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
-	} else if (command.find("QUIT") == 0){
-		std::string quit = command.substr(6);
-		print(PURPLE << getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
-	} else if (command.find("JOIN") == 0){
-		std::string name = command.substr(6);
-		if (getChannel().find(name) == getChannel().end())
-			add_channel(name, client_index);
-		else
-			add_client_channel(name, client_index);
-	} else {
-		print(RED << "Wrong command: " << command << RESET);
+void IRC::init_cmds() {
+	_commands["PASS"] = &IRC::passCmd;
+	_commands["NICK"] = &IRC::nickCmd;
+	_commands["USER"] = &IRC::userCmd;
+	// _commands["MODE"] = &IRC::mode;
+	// _commands["JOIN"] = &IRC::joinCmd;
+	// _commands["TOPIC"] = &IRC::topicCmd;
+	// _commands["PRIVMSG"] = &IRC::privmsg;
+	// _commands["QUIT"] = &IRC::quitCmd;
+	_commands["PING"] = &IRC::pingCmd;
+	// _commands["KICK"] = &IRC::kick;
+	// _commands["INVITE"] = &IRC::invite;
+}
+
+void IRC::passCmd(int client_index, const std::string &command) {
+	std::string clientPass = command.substr(5);
+	set_client_pass(client_index, clientPass);
+	if (getClient(client_index)._pass != getPassword()) {
+		print(RED << "Connection with client " << client_index << " failed: wrong password " << RESET);
+		std::string errMsg = "ERROR :Wrong password\r\n";
+		send(getFds()[client_index].fd, errMsg.c_str(), errMsg.size(), 0);
+		close(getFds()[client_index].fd);
+		getFds()[client_index] = getFds()[getNbclients() - 1];
+		decremente_nbclient();
 	}
 }
+
+void IRC::nickCmd(int client_index, const std::string &command) {
+	std::string nickname = command.substr(5);
+	while (!compare_nickname(nickname))
+		nickname = "_" + nickname;
+	set_client_nickname(client_index, nickname);
+}
+
+void IRC::userCmd(int client_index, const std::string &command) {
+	std::string username = command.substr(5, command.find(' ', 5) - 5);
+	while (!compare_username(username))
+		username = "_" + username;
+	set_client_username(client_index, username);
+	std::string welcome = ":server 001 " + getClient(client_index)._nickname +
+		" :" + getClient(client_index)._nickname + " [" + username + "@localhost] Bienvenue !\r\n";
+	send(getFds()[client_index].fd, welcome.c_str(), welcome.size(), 0);
+}
+
+void IRC::pingCmd(int client_index, const std::string &command) {
+	std::string pongResponse = "PONG :" + command.substr(5) + "\r\n";
+	send(getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
+}
+
+void IRC::quiCmd(int client_index, const std::string &command) {
+	std::string quit = command.substr(6);
+	print(PURPLE << getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
+}
+
+void IRC::handle_client_command(int client_index, const std::string &command) {
+	std::string cmd = command.substr(0, command.find(' '));
+
+	std::map<std::string, CommandFunc>::iterator it = _commands.find(cmd);
+	if (it != _commands.end()) {
+		CommandFunc func = it->second;
+		(this->*func)(client_index, command);
+	} else {
+		print(RED << "Commande inconnue" << command << RESET);
+	}
+}
+
+// void IRC::handle_client_command(int client_index, const std::string &command) {
+// 	if (command.compare(0, 4, "CAP ") == 0 && command.find("LS") != std::string::npos) {
+// 		print("ignore CAP LS");
+// 	} else if (command.find("PASS ") == 0) {
+// 		std::string clientPass = command.substr(5);
+// 		set_client_pass(client_index, clientPass);
+// 		if (getClient(client_index)._pass != getPassword()) {
+// 			print(RED << "Connection with client " << client_index << " failed: wrong password " << RESET);
+// 			std::string errMsg = "ERROR :Wrong password\r\n";
+// 			send(getFds()[client_index].fd, errMsg.c_str(), errMsg.size(), 0);
+// 			close(getFds()[client_index].fd);
+// 			getFds()[client_index] = getFds()[getNbclients() - 1];
+// 			decremente_nbclient();
+// 		}
+// 	} else if (command.find("NICK ") == 0) {
+// 		std::string nickname = command.substr(5);
+// 		while (!compare_nickname(nickname))
+// 			nickname = "_" + nickname;
+// 		set_client_nickname(client_index, nickname);
+// 	} else if (command.find("USER ") == 0) {
+// 		std::string username = command.substr(5, command.find(' ', 5) - 5);
+// 		while (!compare_username(username))
+// 			username = "_" + username;
+// 		set_client_username(client_index, username);
+// 		std::string welcome = ":server 001 " + getClient(client_index)._nickname +
+// 			" :" + getClient(client_index)._nickname + " [" + username + "@localhost] Bienvenue !\r\n";
+// 		send(getFds()[client_index].fd, welcome.c_str(), welcome.size(), 0);
+// 	} else if (command.find("PING ") == 0) {
+// 		std::string pongResponse = "PONG :" + command.substr(5) + "\r\n";
+// 		send(getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
+// 	} else if (command.find("QUIT") == 0){
+// 		std::string quit = command.substr(6);
+// 		print(PURPLE << getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
+// 	} else if (command.find("JOIN") == 0){
+// 		std::string name = command.substr(6);
+// 		if (getChannel().find(name) == getChannel().end())
+// 			add_channel(name, client_index);
+// 		else
+// 			add_client_channel(name, client_index);
+// 	} else {
+// 		print(RED << "Wrong command: " << command << RESET);
+// 	}
+// }
 
 void IRC::remove_client(unsigned int client_index) {
 	int fd_to_close = getFds()[client_index].fd;

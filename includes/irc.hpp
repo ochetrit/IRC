@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/25 15:49:07 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/25 17:52:32 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <map>
+#include <functional>
 #include "clients.hpp"
 
 #define print(x) std::cout << x << std::endl
@@ -49,6 +50,7 @@
 
 class IRC
 {
+	typedef void (IRC::*CommandFunc)(int clientFd, std::string cmd);
 	private :
 
 	unsigned int _port;
@@ -58,7 +60,7 @@ class IRC
 	unsigned int	_nb_clients;
 	Map	channels;
 
-
+	std::map<std::string, CommandFunc> _commands;
 	IRC();
 
 	public :
@@ -97,6 +99,14 @@ class IRC
 	void remove_client(unsigned int client_index);
 	void	add_channel(std::string name, unsigned int client);
 	void	add_client_channel(std::string name, unsigned int client);
+
+	// CMDS
+	void passCmd(int client_index, const std::string &command);
+	void nickCmd(int client_index, const std::string &command);
+	void userCmd(int client_index, const std::string &command);
+	void pingCmd(int client_index, const std::string &command);
+	void quiCmd(int client_index, const std::string &command);
+	void init_cmds();
 	
 };
 
