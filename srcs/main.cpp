@@ -6,13 +6,15 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/25 17:53:09 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/26 13:55:36 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/irc.hpp"
 
-
+// std::string IRC::get_prefix(int clientFd) {
+// 	return (":" + getNick(clientFd) + "!" + getUser(clientFd) + "@" + _clients[clientFd].getHost());
+// }
 
 bool	check_args(char *av)
 {
@@ -93,7 +95,7 @@ void IRC::init_cmds() {
 	// _commands["JOIN"] = &IRC::joinCmd;
 	// _commands["TOPIC"] = &IRC::topicCmd;
 	// _commands["PRIVMSG"] = &IRC::privmsg;
-	// _commands["QUIT"] = &IRC::quitCmd;
+	_commands["QUIT"] = &IRC::quitCmd;
 	_commands["PING"] = &IRC::pingCmd;
 	// _commands["KICK"] = &IRC::kick;
 	// _commands["INVITE"] = &IRC::invite;
@@ -117,6 +119,7 @@ void IRC::nickCmd(int client_index, const std::string &command) {
 	while (!compare_nickname(nickname))
 		nickname = "_" + nickname;
 	set_client_nickname(client_index, nickname);
+	std::cout << "nickCmd !!" << std::endl;
 }
 
 void IRC::userCmd(int client_index, const std::string &command) {
@@ -134,7 +137,7 @@ void IRC::pingCmd(int client_index, const std::string &command) {
 	send(getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
 }
 
-void IRC::quiCmd(int client_index, const std::string &command) {
+void IRC::quitCmd(int client_index, const std::string &command) {
 	std::string quit = command.substr(6);
 	print(PURPLE << getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
 }
@@ -147,7 +150,7 @@ void IRC::handle_client_command(int client_index, const std::string &command) {
 		CommandFunc func = it->second;
 		(this->*func)(client_index, command);
 	} else {
-		print(RED << "Commande inconnue" << command << RESET);
+		print(RED << "Commande inconnue " << command << RESET);
 	}
 }
 
@@ -274,6 +277,7 @@ int main(int ac, char **av) {
 		
 	IRC irc(atoi(av[1]), av[2]);
 	g_irc = &irc;
+	irc.init_cmds();
 	
 	struct sigaction sigIntHandler;
 	sigIntHandler.sa_handler = sign_handler;
