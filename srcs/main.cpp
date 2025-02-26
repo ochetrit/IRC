@@ -80,6 +80,7 @@ void IRC::handle_new_client(int server_fd) {
 		return;
 	}
 
+	print(PURPLE << client_fd << RESET);
 	add_fds(client_fd);
 	set_client_empty(getNbclients());
 	print(GREEN << "New client accepted" << RESET);
@@ -120,10 +121,17 @@ void IRC::handle_client_command(int client_index, const std::string &command) {
 		print(PURPLE << getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
 	} else if (command.find("JOIN") == 0){
 		std::string name = command.substr(6);
-		if (getChannel().find(name) == getChannel().end())
-			add_channel(name, client_index);
+		print(RED << (irc.getChannel().find(name) != irc.getChannel().end()) << RESET);
+		if (irc.getChannel().find(name) != irc.getChannel().end())
+			irc.add_client_channel(name, client_index);
 		else
-			add_client_channel(name, client_index);
+			irc.add_channel(name, client_index);
+	} else if (command.find("PRIVMSG") == 0){
+		size_t startChannel = command.find("#") + 1;
+		size_t endChannel = command.find(" ", startChannel);
+		std::string channel = command.substr(startChannel, endChannel - startChannel);
+		std::string message = command;
+		irc.send_message(channel, message, client_index);
 	} else {
 		print(RED << "Wrong command: " << command << RESET);
 	}
