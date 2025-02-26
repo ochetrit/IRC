@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/26 13:54:55 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/26 17:38:08 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ unsigned int	IRC::getNbclients(){return _nb_clients;}
 
 struct pollfd	*IRC::getFds(){return _fds;}
 
-t_clients		IRC::getClient(unsigned int client){return _clients[client];}
+t_clients		&IRC::getClient(unsigned int client){return _clients[client];}
 
 std::string IRC::getPassword() {
 	return this->_password;

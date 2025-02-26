@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/26 13:55:51 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/26 17:37:35 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,10 +63,10 @@ class IRC
 		unsigned int	getPort();
 		unsigned int	getNbclients();
 		struct pollfd	*getFds();
-		t_clients		getClient(unsigned int client);
+		t_clients		&getClient(unsigned int client);
 		int				getClientfd(unsigned int client);
 		std::string		getPassword();
-		Map				getChannel();
+		Map				&getChannel();
 		std::string		getNick(unsigned int client);
 		std::string		getUser(unsigned int client);
 	
@@ -89,6 +89,7 @@ class IRC
 		void remove_client(unsigned int client_index);
 		void	add_channel(std::string name, unsigned int client);
 		void	add_client_channel(std::string name, unsigned int client);
+		void	send_message(std::string &channel, std::string &message, unsigned int client);
 	
 		// UTILS
 		std::string get_prefix(int clientFd);
@@ -100,7 +101,7 @@ class IRC
 		struct pollfd _fds[FD_MAX];
 		t_clients	_clients[FD_MAX];
 		unsigned int	_nb_clients;
-		Map	channels;
+		Map	_channels;
 		
 		std::map<std::string, CommandFunc> _commands;
 		void passCmd(int client_index, const std::string &command);
@@ -108,6 +109,8 @@ class IRC
 		void userCmd(int client_index, const std::string &command);
 		void pingCmd(int client_index, const std::string &command);
 		void quitCmd(int client_index, const std::string &command);
+		void privmsg(int client_index, const std::string &command);
+		void joinCmd(int client_index, const std::string &command);
 		IRC();
 	
 };
