@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/26 17:34:39 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/03 11:28:44 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,6 +167,7 @@ void IRC::handle_client_command(int client_index, const std::string &command) {
 	if (it != _commands.end()) {
 		CommandFunc func = it->second;
 		(this->*func)(client_index, command);
+	}
 	else
 		print(RED << "Commande inconnue " << command << RESET);
 }
@@ -236,8 +237,8 @@ IRC* g_irc = NULL;
 
 void	sign_handler(int signum) {
 	print(RED << "\nCaught Ctrl + C (signal " << signum << "), cleaning up..." << RESET);
-
 	if (g_irc) {
+		g_irc->clearCommands();
 		for (unsigned int i = 0; i < g_irc->getNbclients(); i++)
 			close(g_irc->getFds()[i].fd);
 	}
@@ -252,11 +253,12 @@ int main(int ac, char **av) {
 	g_irc = &irc;
 	irc.init_cmds();
 	
-	struct sigaction sigIntHandler;
-	sigIntHandler.sa_handler = sign_handler;
-	sigemptyset(&sigIntHandler.sa_mask);
-	sigIntHandler.sa_flags = 0;
-	sigaction(SIGINT, &sigIntHandler, NULL);
+	// struct sigaction sigIntHandler;
+	// sigIntHandler.sa_handler = sign_handler;
+	// sigemptyset(&sigIntHandler.sa_mask);
+	// sigIntHandler.sa_flags = 0;
+	// sigaction(SIGINT, &sigIntHandler, NULL);
+	signal(SIGINT, sign_handler);
 	
 	int server_fd = irc.init_server_socket();
 	if (server_fd < 0)

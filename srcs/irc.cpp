@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/26 17:38:08 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/03 11:28:29 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ std::string IRC::getUser(unsigned int client) {
 	return _clients[client]._username;
 }
 
-Map		IRC::getChannel(){return channels;}
+Map		&IRC::getChannel(){return _channels;}
 
 void	IRC::add_fds(int fd)
 {
@@ -100,4 +100,8 @@ bool	IRC::compare_username(std::string username)
 			return false;
 	}
 	return true;
+}
+
+void	IRC::clearCommands() {
+	_commands.clear();
 }
