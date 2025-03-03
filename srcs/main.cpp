@@ -167,9 +167,8 @@ void IRC::handle_client_command(int client_index, const std::string &command) {
 	if (it != _commands.end()) {
 		CommandFunc func = it->second;
 		(this->*func)(client_index, command);
-	} else {
+	else
 		print(RED << "Commande inconnue " << command << RESET);
-	}
 }
 
 void IRC::remove_client(unsigned int client_index) {
