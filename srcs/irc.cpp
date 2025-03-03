@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/25 16:12:48 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/02/26 17:38:08 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,15 @@ std::string IRC::getPassword() {
 	return this->_password;
 }
 
-Map		&IRC::getChannel(){return _channels;}
+std::string IRC::getNick(unsigned int client) {
+	return _clients[client]._nickname;
+}
+
+std::string IRC::getUser(unsigned int client) {
+	return _clients[client]._username;
+}
+
+Map		IRC::getChannel(){return channels;}
 
 void	IRC::add_fds(int fd)
 {
