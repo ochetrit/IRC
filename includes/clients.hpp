@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 17:27:00 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/24 13:59:09 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/03 13:38:11 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ typedef struct s_clients
 	std::string _nickname;
 	std::string	_username;
 	std::string _pass;
+	std::string _host;
 }	t_clients;
 
 typedef struct s_channel

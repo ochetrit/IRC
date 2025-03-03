@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/03 11:28:29 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/03 13:38:38 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,10 @@ std::string IRC::getUser(unsigned int client) {
 	return _clients[client]._username;
 }
 
+std::string IRC::getHost(unsigned int client) {
+	return _clients[client]._host;
+}
+
 Map		&IRC::getChannel(){return _channels;}
 
 void	IRC::add_fds(int fd)
@@ -78,6 +82,10 @@ void	IRC::set_client_username(unsigned int client, std::string &std){
 
 void	IRC::set_client_pass(unsigned int client, std::string &std) {
 	_clients[client]._pass = std;
+}
+
+void	IRC::set_client_host(unsigned int client, std::string &std) {
+	_clients[client]._host = std;
 }
 
 void	IRC::decremente_nbclient(){_nb_clients--;}

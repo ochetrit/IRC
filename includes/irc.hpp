@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/03 11:28:01 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/03 14:54:06 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@
 #include <signal.h>
 #include <map>
 #include <functional>
+#include <netdb.h>
 #include "clients.hpp"
 
 #define print(x) std::cout << x << std::endl
@@ -69,12 +70,14 @@ class IRC
 		Map				&getChannel();
 		std::string		getNick(unsigned int client);
 		std::string		getUser(unsigned int client);
+		std::string		getHost(unsigned int client);
 	
 		void	add_fds(int fd);
 		void	set_client_empty(unsigned int client);
 		void	set_client_nickname(unsigned int client, std::string &buffer);
 		void	set_client_username(unsigned int client, std::string &buffer);
 		void	set_client_pass(unsigned int client, std::string &buffer);
+		void	set_client_host(unsigned int client, std::string &buffer);
 		void	decremente_nbclient();
 		bool	compare_nickname(std::string nickname);
 		bool	compare_username(std::string username);
@@ -94,6 +97,7 @@ class IRC
 	
 		// UTILS
 		std::string get_prefix(int clientFd);
+		void sendAndDisplay(int client_fd, std::string msg);
 		void init_cmds();
 		
 	private :
