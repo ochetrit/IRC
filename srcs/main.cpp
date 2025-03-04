@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/03 15:19:04 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/04 15:14:24 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,6 +204,22 @@ void IRC::privmsg(int client_index, const std::string &command) {
 	send_message(channel, message, client_index);
 }
 
+
+void IRC::remove_client(unsigned int client_index) {
+	int fd_to_close = getFds()[client_index].fd;
+	
+	close(fd_to_close);
+
+	if (client_index != getNbclients() - 1) {
+		getFds()[client_index] = getFds()[getNbclients() - 1];
+		_clients[client_index] = _clients[getNbclients() - 1];
+	}
+
+	decremente_nbclient();
+	
+	//print(RED << "Client " << client_index << " déconnecté." << RESET);
+}
+
 void IRC::handle_client_command(int client_index, const std::string &command) {
 	std::string cmd = command.substr(0, command.find(' '));
 
@@ -216,22 +232,6 @@ void IRC::handle_client_command(int client_index, const std::string &command) {
 		print(RED << "Commande inconnue " << command << RESET);
 }
 
-void IRC::remove_client(unsigned int client_index) {
-	int fd_to_close = getFds()[client_index].fd;
-
-	close(fd_to_close);
-
-	if (client_index != getNbclients() - 1) {
-		getFds()[client_index] = getFds()[getNbclients() - 1];
-		_clients[client_index] = _clients[getNbclients() - 1];
-	}
-
-	decremente_nbclient();
-
-	//print(RED << "Client " << client_index << " déconnecté." << RESET);
-}
-
-
 void IRC::handle_client_data(int client_index) {
 	char buffer[512] = {0};
 	int bytes_received = recv(getClientfd(client_index), buffer, sizeof(buffer) - 1, 0);
@@ -241,17 +241,17 @@ void IRC::handle_client_data(int client_index) {
 		return;
 	}
 	
+	_client_buffers[client_index] += std::string(buffer, bytes_received);
 
-	std::string tmp(buffer);
-	tmp.erase(std::remove(tmp.begin(), tmp.end(), '\r'), tmp.end());
+	size_t pos;
 
-	std::istringstream iss(tmp);
-	std::string command;
-	while (std::getline(iss, command)) {
-		if (!command.empty()) {
-			print(YELLOW << "Commande reçue: [" << command << "]" << RESET);
-			handle_client_command(client_index, command);
-		}
+	while ((pos = _client_buffers[client_index].find('\n')) != std::string::npos) {
+		std::string cmd = _client_buffers[client_index].substr(0, pos);
+		_client_buffers[client_index].erase(0, pos + 1); // erase cmd 
+
+		cmd.erase(std::remove(cmd.begin(), cmd.end(), '\r'), cmd.end());
+		print(YELLOW << "Commande reçue: [" << cmd << "]" << RESET);
+		handle_client_command(client_index, cmd);
 	}
 }
 
@@ -282,7 +282,9 @@ IRC* g_irc = NULL;
 void	sign_handler(int signum) {
 	print(RED << "\nCaught Ctrl + C (signal " << signum << "), cleaning up..." << RESET);
 	if (g_irc) {
+		print("here");
 		g_irc->clearCommands();
+		g_irc->clearClientBuffers();
 		for (unsigned int i = 0; i < g_irc->getNbclients(); i++)
 			close(g_irc->getFds()[i].fd);
 	}
@@ -296,12 +298,7 @@ int main(int ac, char **av) {
 	IRC irc(atoi(av[1]), av[2]);
 	g_irc = &irc;
 	irc.init_cmds();
-	
-	// struct sigaction sigIntHandler;
-	// sigIntHandler.sa_handler = sign_handler;
-	// sigemptyset(&sigIntHandler.sa_mask);
-	// sigIntHandler.sa_flags = 0;
-	// sigaction(SIGINT, &sigIntHandler, NULL);
+
 	signal(SIGINT, sign_handler);
 	
 	int server_fd = irc.init_server_socket();

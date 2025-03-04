@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/03 14:54:06 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/04 15:12:54 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,6 +94,7 @@ class IRC
 		void	add_client_channel(std::string name, unsigned int client);
 		void	send_message(std::string &channel, std::string &message, unsigned int client);
 		void	clearCommands();
+		void	clearClientBuffers();
 	
 		// UTILS
 		std::string get_prefix(int clientFd);
@@ -107,6 +108,8 @@ class IRC
 		t_clients	_clients[FD_MAX];
 		unsigned int	_nb_clients;
 		Map	_channels;
+		std::map<int, std::string> _client_buffers;
+
 		
 		std::map<std::string, CommandFunc> _commands;
 		void passCmd(int client_index, const std::string &command);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/03 13:38:38 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/04 15:12:44 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,4 +112,8 @@ bool	IRC::compare_username(std::string username)
 
 void	IRC::clearCommands() {
 	_commands.clear();
+}
+
+void IRC::clearClientBuffers() {
+	_client_buffers.clear();
 }
