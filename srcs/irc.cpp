@@ -6,7 +6,7 @@
 /*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/04 15:12:44 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/05 14:32:00 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 IRC::IRC(){}
 
-IRC::IRC(unsigned int port, std::string password):_port(port), _password(password), _nb_clients(0){}
+IRC::IRC(unsigned int port, std::string password):_port(port), _password(password), _nb_clients(0), _servername("ft_irc") {}
 
 IRC::~IRC(){
 	print("The server is closed");

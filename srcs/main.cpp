@@ -6,7 +6,7 @@
 /*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/04 15:14:24 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/05 17:08:17 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,15 @@ bool check_arguments(int ac, char **av) {
 void IRC::sendAndDisplay(int client_fd, std::string msg) {
 	std::cout << BLUE << "[client: " << client_fd << "]: " << RESET << msg;
 	send(getFds()[client_fd].fd, msg.c_str(), msg.length(), 0);
+}
+
+std::string getServerCreationDate() {
+	std::time_t now = std::time(NULL);
+	std::tm* tm = std::localtime(&now);
+
+	char buffer[80];
+	std::strftime(buffer, sizeof(buffer), "%a %b %d %Y %H:%M:%S UTC", tm);
+	return std::string(buffer);
 }
 
 int IRC::init_server_socket() {
@@ -151,35 +160,100 @@ void IRC::passCmd(int client_index, const std::string &command) {
 		print(GREEN << "New client accepted" << RESET);
 }
 
+bool IRC::isValidNickname(const std::string &nickname) {
+	if (nickname.length() > 9 || nickname.empty() || !isalpha(nickname[0]))
+		return false;
+	for (size_t i = 1; i < nickname.length(); ++i) {
+		if (!isalnum(nickname[i]) && nickname[i] != '-' && nickname[i] != '_' && nickname[i] != '|')
+			return false;
+	}
+	return true;
+}
+
+bool IRC::isNicknameTaken(const std::string &nickname) {
+	for (int i = 0; i < FD_MAX; i++) {
+		if (_clients[i]._nickname == nickname)
+			return true;
+	}
+	return false;
+}
+
+
 void IRC::nickCmd(int client_index, const std::string &command) {
 	std::string nickname = command.substr(5);
+
+	if (!isValidNickname(nickname)) {
+		sendAndDisplay(client_index, ':' + _servername + " 432 " + nickname + " :Not a valid nickname\r\n");
+		return;
+	}
+
+	if (isNicknameTaken(nickname)) {
+		sendAndDisplay(client_index, ':' + _servername + " 433 " + nickname + " :Nickname is already in use\r\n");
+		return;
+	}
+	
 	while (!compare_nickname(nickname)) {
 		std::ostringstream oss;
 		oss << nickname << "[" << client_index << "]";
 		nickname = oss.str();
 	}
+	std::string old_nick = getNick(client_index);
 	set_client_nickname(client_index, nickname);
 	std::cout << "nickname : " << nickname << std::endl;
 }
 
 void IRC::userCmd(int client_index, const std::string &command) {
-	std::string username = command.substr(5, command.find(' ', 5) - 5);
+	std::istringstream iss(command);
+	std::string cmd, username, hostname, servername, realname;
+	std::string creationDate = getServerCreationDate();
+
+	if (_clients[client_index]._pass.empty()) {
+		sendAndDisplay(client_index, ":myserver.com 464 * :Password required\r\n");
+		return;
+	}
+	
+	iss >> cmd >> username >> hostname >> servername;
+	std::getline(iss, realname);
+
+	if (username.empty() || hostname.empty() || servername.empty() || realname.empty()) {
+		sendAndDisplay(client_index, ":" + _servername + " 461 " + getNick(client_index) + " :Missing arguments\r\n");
+		return;
+	}
+
+	if (realname[1] != ':') {
+		sendAndDisplay(client_index, ":" + _servername + " 461 " + getNick(client_index) + " :Missing ':' before realname\r\n");
+	}
+
+	realname.erase(0, realname.find_first_not_of(' '));
+	realname.erase(realname.find_last_not_of(' ') + 1);
+
+	// Afficher les informations parsées
+	print(GREEN << "Parsed USER command - Username: " << username 
+				<< ", Hostname: " << hostname
+				<< ", Servername: " << servername
+				<< ", Realname: " << realname << RESET);
+
 	while (!compare_username(username)) {
 		std::ostringstream oss;
 		oss << username << "[" << client_index << "]";
 		username = oss.str();
 	}
+
 	set_client_username(client_index, username);
-	std::string welcome = ":server 001 " + getClient(client_index)._nickname +
-		" :" + getClient(client_index)._nickname + " [" + username + "@localhost] Bienvenue !\r\n";
+	set_client_host(client_index, hostname);
+
+	std::string welcome = ":server 001 " + getNick(client_index) + " :Welcome to the IRC Network, " + getNick(client_index) + "!" + username + '@' + hostname + "\r\n"; 
+	std::string servInfo = ":server 002 " + getNick(client_index) + " :Your host is " + _servername + " ! \r\n";
+	std::string currentInfo = ":server 003 " + getNick(client_index) + " :This server was created " + creationDate + "\r\n";
 	sendAndDisplay(client_index, welcome);
-	// send(getFds()[client_index].fd, welcome.c_str(), welcome.size(), 0);
+	sendAndDisplay(client_index, servInfo);
+	sendAndDisplay(client_index, currentInfo);
+
 }
 
 void IRC::pingCmd(int client_index, const std::string &command) {
 	std::string pongResponse = "PONG :" + command.substr(5) + "\r\n";
 	sendAndDisplay(client_index, pongResponse);
-	// send(getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
 }
 
 void IRC::quitCmd(int client_index, const std::string &command) {

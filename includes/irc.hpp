@@ -6,12 +6,11 @@
 /*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/04 15:12:54 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/05 17:00:10 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef IRC_HPP
-
 #define IRC_HPP
 
 #include <string>
@@ -31,6 +30,8 @@
 #include <map>
 #include <functional>
 #include <netdb.h>
+#include <vector>
+#include <ctime>
 #include "clients.hpp"
 
 #define print(x) std::cout << x << std::endl
@@ -100,13 +101,17 @@ class IRC
 		std::string get_prefix(int clientFd);
 		void sendAndDisplay(int client_fd, std::string msg);
 		void init_cmds();
+		bool isValidNickname(const std::string &nickname);
+		bool isNicknameTaken(const std::string &nickname);
 		
 	private :
 		unsigned int _port;
 		std::string _password;
 		struct pollfd _fds[FD_MAX];
 		t_clients	_clients[FD_MAX];
+		// std::map<int, Client> _clients; SUREMENT UTILISER MAP PR LES ITERATORS A VOIR AVEC OSCAR
 		unsigned int	_nb_clients;
+		std::string _servername;
 		Map	_channels;
 		std::map<int, std::string> _client_buffers;
 
