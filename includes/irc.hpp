@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   irc.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/05 17:00:10 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/10 16:32:01 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,6 +86,7 @@ class IRC
 	
 		// main func
 		int init_server_socket();
+		// std::string getClientHost(int client_fd);
 		void handle_new_client(int server_fd);
 		void handle_client_command(int client_index, const std::string &command);
 		void handle_client_data(int client_index);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/05 17:08:17 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/10 16:33:55 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,6 +112,22 @@ std::string getClientHost(int client_fd) {
 	return std::string(ip_str);
 }
 
+// std::string IRC::getClientHost(int client_fd) {
+// 	struct sockaddr_in addr;
+// 	socklen_t addr_len = sizeof(addr);
+// 	if (getpeername(client_fd, (struct sockaddr *)&addr, &addr_len) == -1) {
+// 		return "unknown";
+// 	}
+
+// 	struct hostent *host = gethostbyaddr(&addr.sin_addr, sizeof(addr.sin_addr), AF_INET);
+// 	if (!host) {
+// 		return inet_ntoa(addr.sin_addr);  // Retourne l'IP si pas de nom
+// 	}
+
+// 	return std::string(host->h_name);  // Assure-toi que `std::string` gère la mémoire
+// }
+
+
 void IRC::handle_new_client(int server_fd) {
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
@@ -180,7 +196,28 @@ bool IRC::isNicknameTaken(const std::string &nickname) {
 
 
 void IRC::nickCmd(int client_index, const std::string &command) {
+
+	if (command.length() <= 5) {  
+		sendAndDisplay(client_index, ":" + _servername + " 431 * :No nickname given\r\n");
+		return;
+	}
+
 	std::string nickname = command.substr(5);
+
+	print("servername: ");
+	print(_servername);
+	print("nickname: ");
+	print(nickname);
+
+	if (_clients[client_index]._pass.empty()) {
+		sendAndDisplay(client_index, _servername + " 464 * :Password required\r\n");
+		return;
+	}
+
+	if (nickname.empty()) {
+		sendAndDisplay(client_index, ':' + _servername + " 431 * :No nickname given\r\n");
+		return;
+	}
 
 	if (!isValidNickname(nickname)) {
 		sendAndDisplay(client_index, ':' + _servername + " 432 " + nickname + " :Not a valid nickname\r\n");
@@ -188,7 +225,7 @@ void IRC::nickCmd(int client_index, const std::string &command) {
 	}
 
 	if (isNicknameTaken(nickname)) {
-		sendAndDisplay(client_index, ':' + _servername + " 433 " + nickname + " :Nickname is already in use\r\n");
+		sendAndDisplay(client_index, ':' + _servername + " 433\r\n");
 		return;
 	}
 	
@@ -208,7 +245,7 @@ void IRC::userCmd(int client_index, const std::string &command) {
 	std::string creationDate = getServerCreationDate();
 
 	if (_clients[client_index]._pass.empty()) {
-		sendAndDisplay(client_index, ":myserver.com 464 * :Password required\r\n");
+		sendAndDisplay(client_index, _servername +" 464 * :Password required\r\n");
 		return;
 	}
 	
@@ -227,7 +264,6 @@ void IRC::userCmd(int client_index, const std::string &command) {
 	realname.erase(0, realname.find_first_not_of(' '));
 	realname.erase(realname.find_last_not_of(' ') + 1);
 
-	// Afficher les informations parsées
 	print(GREEN << "Parsed USER command - Username: " << username 
 				<< ", Hostname: " << hostname
 				<< ", Servername: " << servername
@@ -258,7 +294,7 @@ void IRC::pingCmd(int client_index, const std::string &command) {
 
 void IRC::quitCmd(int client_index, const std::string &command) {
 	std::string quit = command.substr(6);
-	print(PURPLE << getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
+	print(PURPLE << getNick(client_index) << " is deconnected because: "<< quit << RESET);
 }
 
 void IRC::joinCmd(int client_index, const std::string &command) {
