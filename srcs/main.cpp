@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/10 16:33:55 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/12 19:09:12 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,10 +204,10 @@ void IRC::nickCmd(int client_index, const std::string &command) {
 
 	std::string nickname = command.substr(5);
 
-	print("servername: ");
-	print(_servername);
-	print("nickname: ");
-	print(nickname);
+	// print("servername: ");
+	// print(_servername);
+	// print("nickname: ");
+	// print(nickname);
 
 	if (_clients[client_index]._pass.empty()) {
 		sendAndDisplay(client_index, _servername + " 464 * :Password required\r\n");
@@ -298,6 +298,12 @@ void IRC::quitCmd(int client_index, const std::string &command) {
 }
 
 void IRC::joinCmd(int client_index, const std::string &command) {
+	if (command.length() <= 5) {
+		sendAndDisplay(client_index, ":" + _servername + " 461 JOIN :Not enough parameters\r\n");
+		return;
+	}
+
+	
 	std::string name = command.substr(6);
 	print(RED << (getChannel().find(name) != getChannel().end()) << RESET);
 	if (getChannel().find(name) != getChannel().end())
