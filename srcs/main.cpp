@@ -6,7 +6,7 @@
 /*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/12 19:09:12 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/13 18:31:05 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -297,17 +297,36 @@ void IRC::quitCmd(int client_index, const std::string &command) {
 	print(PURPLE << getNick(client_index) << " is deconnected because: "<< quit << RESET);
 }
 
+bool IRC::isInvitedOnly(const std::string &channel) {
+	if (getChannel().find(channel) == getChannel().end())
+		return false;
+	
+	return getChannel()[channel].modes.find('i') != std::string::npos;
+}
+
 void IRC::joinCmd(int client_index, const std::string &command) {
 	if (command.length() <= 5) {
 		sendAndDisplay(client_index, ":" + _servername + " 461 JOIN :Not enough parameters\r\n");
 		return;
 	}
 
+		
+	std::string name = command.substr(5);
+	name.erase(0, name.find_first_not_of(" \t"));
+	name.erase(name.find_last_not_of(" \t") + 1);
+
+	if (name.empty() || name[0] != '#') {
+		sendAndDisplay(client_index, ':' + _servername + " 403 " + name + " :No such channel\r\n");
+		return;
+	}
 	
-	std::string name = command.substr(6);
 	print(RED << (getChannel().find(name) != getChannel().end()) << RESET);
-	if (getChannel().find(name) != getChannel().end())
+	if (getChannel().find(name) != getChannel().end()) {
+		if (channelIsInviteOnly(name) && !isInvited(name, client_index)) {
+			sendAndDisplay(client_index, ":" + _servername + " 473 " + name + " :Cannot join channel (+i)\r\n");
+		}
 		add_client_channel(name, client_index);
+	}
 	else
 		add_channel(name, client_index);
 }
