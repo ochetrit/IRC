@@ -6,7 +6,7 @@
 /*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/13 18:31:05 by nino             ###   ########.fr       */
+/*   Updated: 2025/03/17 16:57:31 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -156,7 +156,7 @@ void IRC::init_cmds() {
 	_commands["QUIT"] = &IRC::quitCmd;
 	_commands["PING"] = &IRC::pingCmd;
 	// _commands["KICK"] = &IRC::kick;
-	// _commands["INVITE"] = &IRC::invite;
+	// _commands["INVITE"] = &IRC::invite; 
 }
 
 void IRC::passCmd(int client_index, const std::string &command) {
@@ -193,7 +193,6 @@ bool IRC::isNicknameTaken(const std::string &nickname) {
 	}
 	return false;
 }
-
 
 void IRC::nickCmd(int client_index, const std::string &command) {
 
@@ -297,12 +296,12 @@ void IRC::quitCmd(int client_index, const std::string &command) {
 	print(PURPLE << getNick(client_index) << " is deconnected because: "<< quit << RESET);
 }
 
-bool IRC::isInvitedOnly(const std::string &channel) {
-	if (getChannel().find(channel) == getChannel().end())
-		return false;
+// bool IRC::isInvitedOnly(const std::string &channel) {
+// 	if (getChannel().find(channel) == getChannel().end())
+// 		return false;
 	
-	return getChannel()[channel].modes.find('i') != std::string::npos;
-}
+// 	return getChannel()[channel].modes.find('i') != std::string::npos;
+// }
 
 void IRC::joinCmd(int client_index, const std::string &command) {
 	if (command.length() <= 5) {
@@ -310,8 +309,10 @@ void IRC::joinCmd(int client_index, const std::string &command) {
 		return;
 	}
 
+	std::istringstream lineStream(command.substr(5));
+	std::string name, key;
+	lineStream >> name >> key;
 		
-	std::string name = command.substr(5);
 	name.erase(0, name.find_first_not_of(" \t"));
 	name.erase(name.find_last_not_of(" \t") + 1);
 
@@ -321,14 +322,34 @@ void IRC::joinCmd(int client_index, const std::string &command) {
 	}
 	
 	print(RED << (getChannel().find(name) != getChannel().end()) << RESET);
+
 	if (getChannel().find(name) != getChannel().end()) {
-		if (channelIsInviteOnly(name) && !isInvited(name, client_index)) {
-			sendAndDisplay(client_index, ":" + _servername + " 473 " + name + " :Cannot join channel (+i)\r\n");
+		t_channel &channel = _channels[name];
+		if (channel._channel_key && key != channel._password) {
+			sendAndDisplay(client_index, ":" + _servername + " 475 " + _clients[client_index].getNick() + " " + name + " :Wrong channel key\r\n");
+			return;
 		}
+
+		if (channel._user_limit && channel.getNbUsersInChannel() >= channel._max_user) {
+			sendAndDisplay(client_index, ":" + _servername + " 471 " + _clients[client_index].getNick() + " " + name + " :Channel is full\r\n");
+			return;
+		}
+
+		if (channel._invite_only && !isInvited(name, client_index)) {
+			sendAndDisplay(client_index, ":" + _servername + " 473 " + _clients[client_index].getNick() + " " + name + " :You must be invited to join this channel\r\n");
+			return;
+		}
+	
 		add_client_channel(name, client_index);
 	}
 	else
 		add_channel(name, client_index);
+	
+	if (!_channels[name]._topic.empty()) {
+		sendAndDisplay(client_index, ":" + _servername + " 332 " + _clients[client_index].getNick() + " " + name + " :" + _channels[name]._topic + "\r\n");
+	}
+
+	// senduserlist
 }
 
 void IRC::privmsg(int client_index, const std::string &command) {

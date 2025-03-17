@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ochetrit <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: nino <nino@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/25 14:57:43 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/02/25 14:57:44 by ochetrit         ###   ########.fr       */
+/*   Updated: 2025/03/17 16:25:08 by nino             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,15 +27,25 @@ void	IRC::add_channel(std::string name, unsigned int client)
 	new_channel._client_indexs[client] = true;
 	new_channel._fd_operator[client] = true;
 	_channels.insert(std::make_pair(name, new_channel));
-	//print(BLUE << "New channel: " << name);
-	//print("Operator: " << _clients[client]._username << RESET);
+	
+	_channels.insert(std::make_pair(name, new_channel));
+
+	std::string joinMsg = get_prefix(client) + " JOIN:" + name + "\r\n";
+	sendAndDisplay(client, joinMsg);
+
+	// sendListToClient
 }
 
 
 void	IRC::add_client_channel(std::string name, unsigned int client)
 {
 	_channels[name]._client_indexs[client] = true;
-	//print(BLUE << _clients[client]._username << " join " << name << RESET);
+	std::string joinMsg = get_prefix(client) + " JOIN:" + name + "\r\n";
+	sendAndDisplay(client, joinMsg);
+
+	// broadCastToChan
+
+	// sendListToClient
 }
 
 void	IRC::send_message(std::string &channel, std::string &message, unsigned int client)
