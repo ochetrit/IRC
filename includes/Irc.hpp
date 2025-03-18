@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   irc.hpp                                            :+:      :+:    :+:   */
+/*   Irc.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:24:39 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/10 16:32:01 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/18 16:44:19 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,13 +32,14 @@
 #include <netdb.h>
 #include <vector>
 #include <ctime>
-#include "clients.hpp"
+#include "Channel.hpp"
+#include "Client.hpp"
 
 #define print(x) std::cout << x << std::endl
 #define err(x) std::cerr << x << std::endl
 #define MAX_PORT 65535
 #define FD_MAX 1021
-#define Map std::map<std::string, t_channel>
+// #define Map std::map<std::string, t_channel>
 #define MAG "\e[0;35m"
 #define RESET   "\033[0m"
 #define RED     "\033[31m"
@@ -65,13 +66,13 @@ class IRC
 		unsigned int	getPort();
 		unsigned int	getNbclients();
 		struct pollfd	*getFds();
-		t_clients		&getClient(unsigned int client);
+		Client		&getClient(unsigned int client);
 		int				getClientfd(unsigned int client);
-		std::string		getPassword();
-		Map				&getChannel();
-		std::string		getNick(unsigned int client);
-		std::string		getUser(unsigned int client);
-		std::string		getHost(unsigned int client);
+		std::map<std::string, Channel> &getChannel();
+		// std::string		getPassword();
+		// std::string		getNick(unsigned int client);
+		// std::string		getUser(unsigned int client);
+		// std::string		getHost(unsigned int client);
 	
 		void	add_fds(int fd);
 		void	set_client_empty(unsigned int client);
@@ -102,6 +103,7 @@ class IRC
 		std::string get_prefix(int clientFd);
 		void sendAndDisplay(int client_fd, std::string msg);
 		void init_cmds();
+		void cleanup();
 		bool isValidNickname(const std::string &nickname);
 		bool isNicknameTaken(const std::string &nickname);
 		
@@ -109,11 +111,12 @@ class IRC
 		unsigned int _port;
 		std::string _password;
 		struct pollfd _fds[FD_MAX];
-		t_clients	_clients[FD_MAX];
 		// std::map<int, Client> _clients; SUREMENT UTILISER MAP PR LES ITERATORS A VOIR AVEC OSCAR
+		std::map<int, Client> _clients;
+		std::map<std::string, Channel> _channels;
 		unsigned int	_nb_clients;
 		std::string _servername;
-		Map	_channels;
+		// Map	_channels;
 		std::map<int, std::string> _client_buffers;
 
 		
