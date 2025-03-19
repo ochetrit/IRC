@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/18 17:32:08 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/19 13:59:09 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,11 +207,6 @@ void IRC::nickCmd(int client_index, const std::string &command) {
 	nickname.erase(0, nickname.find_first_not_of(" \t"));
 	nickname.erase(nickname.find_last_not_of(" \t") + 1);
 
-	// print("servername: ");
-	// print(_servername);
-	// print("nickname: ");
-	// print(nickname);
-
 	if (_clients[client_index].getPass().empty()) {
 		sendAndDisplay(client_index, _servername + " 464 * :Password required\r\n");
 		return;
@@ -316,9 +311,6 @@ void IRC::joinCmd(int client_index, const std::string &command) {
 	std::istringstream lineStream(command.substr(5));
 	std::string name, key;
 	lineStream >> name >> key;
-		
-	// name.erase(0, name.find_first_not_of(" \t"));
-	// name.erase(name.find_last_not_of(" \t") + 1);
 
 	print("name = " + name);
 	print("key = " + key);

@@ -6,7 +6,7 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:36:14 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/18 17:05:06 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/19 13:54:37 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,6 @@ IRC &IRC::operator=(const IRC &other) {
 unsigned int IRC::getPort() { return _port; }
 unsigned int IRC::getNbclients() { return _nb_clients; }
 struct pollfd *IRC::getFds() { return _fds; }
-// std::string IRC::getPassword() { return _password; }
 std::map<std::string, Channel> &IRC::getChannel() { return _channels; }
 
 Client &IRC::getClient(unsigned int clientFd) {
