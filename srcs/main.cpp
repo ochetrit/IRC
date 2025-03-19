@@ -6,15 +6,15 @@
 /*   By: nclassea <nclassea@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 13:23:06 by ochetrit          #+#    #+#             */
-/*   Updated: 2025/03/03 11:28:44 by nclassea         ###   ########.fr       */
+/*   Updated: 2025/03/18 17:32:08 by nclassea         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/irc.hpp"
+#include "../includes/Irc.hpp"
 
-// std::string IRC::get_prefix(int clientFd) {
-// 	return (":" + getNick(clientFd) + "!" + getUser(clientFd) + "@" + _clients[clientFd].getHost());
-// }
+std::string IRC::get_prefix(int clientFd) {
+	return (":" + getClient(clientFd).getNickname() + "!" + getClient(clientFd).getUsername() + "@" + getClient(clientFd).getHost());
+}
 
 bool	check_args(char *av)
 {
@@ -45,10 +45,31 @@ bool check_arguments(int ac, char **av) {
 	return true;
 }
 
+void IRC::sendAndDisplay(int client_fd, std::string msg) {
+	std::cout << BLUE << "[client: " << client_fd << "]: " << RESET << msg;
+	send(getFds()[client_fd].fd, msg.c_str(), msg.length(), 0);
+}
+
+std::string getServerCreationDate() {
+	std::time_t now = std::time(NULL);
+	std::tm* tm = std::localtime(&now);
+
+	char buffer[80];
+	std::strftime(buffer, sizeof(buffer), "%a %b %d %Y %H:%M:%S UTC", tm);
+	return std::string(buffer);
+}
+
 int IRC::init_server_socket() {
 	int server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (server_fd == -1) {
 		perror("Socket failed");
+		return -1;
+	}
+
+	int option = 1;
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) < 0) {
+		perror("setsockopt failed");
+		close(server_fd);
 		return -1;
 	}
 
@@ -72,6 +93,41 @@ int IRC::init_server_socket() {
 	return server_fd;
 }
 
+std::string getClientHost(int client_fd) {
+	struct sockaddr_in addr;
+	socklen_t addr_len = sizeof(addr);
+
+	if (getpeername(client_fd, (struct sockaddr*)&addr, &addr_len) == -1) {
+		perror("getpeername failed");
+		return "unknown";
+	}
+
+	char ip_str[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &addr.sin_addr, ip_str, sizeof(ip_str));
+
+	struct hostent *host = gethostbyaddr(&addr.sin_addr, sizeof(addr.sin_addr), AF_INET);
+	if (host)
+		return std::string(host->h_name);
+
+	return std::string(ip_str);
+}
+
+// std::string IRC::getClientHost(int client_fd) {
+// 	struct sockaddr_in addr;
+// 	socklen_t addr_len = sizeof(addr);
+// 	if (getpeername(client_fd, (struct sockaddr *)&addr, &addr_len) == -1) {
+// 		return "unknown";
+// 	}
+
+// 	struct hostent *host = gethostbyaddr(&addr.sin_addr, sizeof(addr.sin_addr), AF_INET);
+// 	if (!host) {
+// 		return inet_ntoa(addr.sin_addr);  // Retourne l'IP si pas de nom
+// 	}
+
+// 	return std::string(host->h_name);  // Assure-toi que `std::string` gère la mémoire
+// }
+
+
 void IRC::handle_new_client(int server_fd) {
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
@@ -81,11 +137,12 @@ void IRC::handle_new_client(int server_fd) {
 		perror("Error accept");
 		return;
 	}
-
+	
+	std::string client_host = getClientHost(client_fd);
+	print(GREEN << "Client connecté depuis : " << client_host << RESET);
 	print(PURPLE << client_fd << RESET);
 	add_fds(client_fd);
 	set_client_empty(getNbclients());
-	print(GREEN << "New client accepted" << RESET);
 }
 
 void IRC::init_cmds() {
@@ -93,71 +150,239 @@ void IRC::init_cmds() {
 	_commands["NICK"] = &IRC::nickCmd;
 	_commands["USER"] = &IRC::userCmd;
 	// _commands["MODE"] = &IRC::mode;
-	_commands["JOIN"] = &IRC::joinCmd;
+	// _commands["JOIN"] = &IRC::joinCmd;
 	// _commands["TOPIC"] = &IRC::topicCmd;
-	_commands["PRIVMSG"] = &IRC::privmsg;
+	// _commands["PRIVMSG"] = &IRC::privmsg;
 	_commands["QUIT"] = &IRC::quitCmd;
 	_commands["PING"] = &IRC::pingCmd;
 	// _commands["KICK"] = &IRC::kick;
-	// _commands["INVITE"] = &IRC::invite;
+	// _commands["INVITE"] = &IRC::invite; 
 }
 
 void IRC::passCmd(int client_index, const std::string &command) {
 	std::string clientPass = command.substr(5);
 	set_client_pass(client_index, clientPass);
-	if (getClient(client_index)._pass != getPassword()) {
+	if (getClient(client_index).getPass() != getClient(client_index).getPass()) {
 		print(RED << "Connection with client " << client_index << " failed: wrong password " << RESET);
 		std::string errMsg = "ERROR :Wrong password\r\n";
+		// std::string errMsg = ": 464 " + getNick(client_index) + " Wrong password\r\n";
 		send(getFds()[client_index].fd, errMsg.c_str(), errMsg.size(), 0);
+		// sendAndDisplay(client_index, errMsg);
 		close(getFds()[client_index].fd);
 		getFds()[client_index] = getFds()[getNbclients() - 1];
 		decremente_nbclient();
 	}
+	else
+		print(GREEN << "New client accepted" << RESET);
 }
 
+bool IRC::isValidNickname(const std::string &nickname) {
+	if (nickname.length() > 9 || nickname.empty() || !isalpha(nickname[0]))
+		return false;
+	for (size_t i = 1; i < nickname.length(); ++i) {
+		if (!isalnum(nickname[i]) && nickname[i] != '-' && nickname[i] != '_' && nickname[i] != '|')
+			return false;
+	}
+	return true;
+}
+
+bool IRC::isNicknameTaken(const std::string &nickname) {
+	for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+		if (it->second.getNickname() == nickname)
+			return true;
+	}
+	return false;
+}
+
+
 void IRC::nickCmd(int client_index, const std::string &command) {
+
+	if (command.length() <= 5) {  
+		sendAndDisplay(client_index, ":" + _servername + " 431 * :No nickname given\r\n");
+		return;
+	}
+
 	std::string nickname = command.substr(5);
-	while (!compare_nickname(nickname))
-		nickname = "_" + nickname;
+
+	nickname.erase(0, nickname.find_first_not_of(" \t"));
+	nickname.erase(nickname.find_last_not_of(" \t") + 1);
+
+	// print("servername: ");
+	// print(_servername);
+	// print("nickname: ");
+	// print(nickname);
+
+	if (_clients[client_index].getPass().empty()) {
+		sendAndDisplay(client_index, _servername + " 464 * :Password required\r\n");
+		return;
+	}
+
+	if (nickname.empty()) {
+		sendAndDisplay(client_index, ':' + _servername + " 431 * :No nickname given\r\n");
+		return;
+	}
+
+	if (!isValidNickname(nickname)) {
+		sendAndDisplay(client_index, ':' + _servername + " 432 " + nickname + " :Not a valid nickname\r\n");
+		return;
+	}
+
+	if (isNicknameTaken(nickname)) {
+		sendAndDisplay(client_index, ":" + _servername + " 433 " + nickname + " :\r\n");
+		return;
+	}
+	
+	while (!compare_nickname(nickname)) {
+		std::ostringstream oss;
+		oss << nickname << "[" << client_index << "]";
+		nickname = oss.str();
+	}
+	std::string old_nick = getClient(client_index).getNickname();
 	set_client_nickname(client_index, nickname);
-	std::cout << "nickCmd !!" << std::endl;
+	sendAndDisplay(client_index, ":" + old_nick + "!" + getClient(client_index).getUsername() + "@" + getClient(client_index).getHost() + " NICK :" + nickname + "\r\n");
 }
 
 void IRC::userCmd(int client_index, const std::string &command) {
-	std::string username = command.substr(5, command.find(' ', 5) - 5);
-	while (!compare_username(username))
-		username = "_" + username;
+	std::istringstream iss(command);
+	std::string cmd, username, hostname, servername, realname;
+	std::string creationDate = getServerCreationDate();
+
+	if (_clients[client_index].getPass().empty()) {
+		sendAndDisplay(client_index, _servername +" 464 * :Password required\r\n");
+		return;
+	}
+	
+	iss >> cmd >> username >> hostname >> servername;
+	std::getline(iss, realname);
+
+	if (username.empty() || hostname.empty() || servername.empty() || realname.empty()) {
+		sendAndDisplay(client_index, ":" + _servername + " 461 " + getClient(client_index).getNickname() + " :Missing arguments\r\n");
+		return;
+	}
+
+	if (realname[1] != ':') {
+		sendAndDisplay(client_index, ":" + _servername + " 461 " + getClient(client_index).getNickname() + " :Missing ':' before realname\r\n");
+	}
+
+	realname.erase(0, realname.find_first_not_of(' '));
+	realname.erase(realname.find_last_not_of(' ') + 1);
+
+	print(GREEN << "Parsed USER command - Username: " << username 
+				<< ", Hostname: " << hostname
+				<< ", Servername: " << servername
+				<< ", Realname: " << realname << RESET);
+
+	while (!compare_username(username)) {
+		std::ostringstream oss;
+		oss << username << "[" << client_index << "]";
+		username = oss.str();
+	}
+
 	set_client_username(client_index, username);
-	std::string welcome = ":server 001 " + getClient(client_index)._nickname +
-		" :" + getClient(client_index)._nickname + " [" + username + "@localhost] Bienvenue !\r\n";
-	send(getFds()[client_index].fd, welcome.c_str(), welcome.size(), 0);
+	set_client_host(client_index, hostname);
+
+	std::string welcome = ":server 001 " + getClient(client_index).getNickname() + " :Welcome to the IRC Network, " + getClient(client_index).getNickname() + "!" + username + '@' + hostname + "\r\n"; 
+	std::string servInfo = ":server 002 " + getClient(client_index).getNickname() + " :Your host is " + _servername + " ! \r\n";
+	std::string currentInfo = ":server 003 " + getClient(client_index).getNickname() + " :This server was created " + creationDate + "\r\n";
+	sendAndDisplay(client_index, welcome);
+	sendAndDisplay(client_index, servInfo);
+	sendAndDisplay(client_index, currentInfo);
+
 }
 
 void IRC::pingCmd(int client_index, const std::string &command) {
 	std::string pongResponse = "PONG :" + command.substr(5) + "\r\n";
-	send(getFds()[client_index].fd, pongResponse.c_str(), pongResponse.size(), 0);
+	sendAndDisplay(client_index, pongResponse);
 }
 
 void IRC::quitCmd(int client_index, const std::string &command) {
 	std::string quit = command.substr(6);
-	print(PURPLE << getClient(client_index)._nickname << " is deconnected because: "<< quit << RESET);
+	print(PURPLE << getClient(client_index).getNickname() << " is deconnected because: "<< quit << RESET);
 }
+
+// bool IRC::isInvitedOnly(const std::string &channel) {
+// 	if (getChannel().find(channel) == getChannel().end())
+// 		return false;
+	
+// 	return getChannel()[channel].modes.find('i') != std::string::npos;
+// }
 
 void IRC::joinCmd(int client_index, const std::string &command) {
-	std::string name = command.substr(6);
+	if (command.length() <= 5) {
+		sendAndDisplay(client_index, ":" + _servername + " 461 JOIN :Not enough parameters\r\n");
+		return;
+	}
+
+	std::istringstream lineStream(command.substr(5));
+	std::string name, key;
+	lineStream >> name >> key;
+		
+	// name.erase(0, name.find_first_not_of(" \t"));
+	// name.erase(name.find_last_not_of(" \t") + 1);
+
+	print("name = " + name);
+	print("key = " + key);
+
+	if (name.empty() || name[0] != '#') {
+		sendAndDisplay(client_index, ':' + _servername + " 403 " + name + " :No such channel\r\n");
+		return;
+	}
+
+	Client &client = getClient(client_index);
+	
 	print(RED << (getChannel().find(name) != getChannel().end()) << RESET);
-	if (getChannel().find(name) != getChannel().end())
+
+	if (getChannel().find(name) != getChannel().end()) {
+		Channel &channel = _channels[name];
+		if (channel.hasChannelKey() && key != channel.getChanPass()) {
+			sendAndDisplay(client_index, ":" + _servername + " 475 " + client.getNickname() + " " + name + " :Wrong Channel key\r\n");
+			return;
+		}
+
+		// if (channel.hasUserLimit() && channel.getNbUsersIn_channel() >= channel.getMaxUsers()) {
+		// 	sendAndDisplay(client_index, ":" + _servername + " 471 " + client.getNickname() + " " + name + " :_channel is full\r\n");
+		// 	return;
+		// }
+
+		// if (channel.isInviteOnly() && !isInvited(name, client_index)) {
+		// 	sendAndDisplay(client_index, ":" + _servername + " 473 " + client.getNickname() + " " + name + " :You must be invited to join this channel\r\n");
+		// 	return;
+		// }
+	
 		add_client_channel(name, client_index);
+	}
 	else
 		add_channel(name, client_index);
+	
+	if (!_channels[name].getTopic().empty()) {
+		sendAndDisplay(client_index, ":" + _servername + " 332 " + client.getNickname() + " " + name + " :" + _channels[name].getTopic() + "\r\n");
+	}
+
+	// senduserlist
 }
 
-void IRC::privmsg(int client_index, const std::string &command) {
-	size_t startChannel = command.find("#") + 1;
-	size_t endChannel = command.find(" ", startChannel);
-	std::string channel = command.substr(startChannel, endChannel - startChannel);
-	std::string message = command;
-	send_message(channel, message, client_index);
+// void IRC::privmsg(int client_index, const std::string &command) {
+// 	size_t startChannel = command.find("#") + 1;
+// 	size_t endChannel = command.find(" ", startChannel);
+// 	std::string channel = command.substr(startChannel, endChannel - startChannel);
+// 	std::string message = command;
+// 	send_message(channel, message, client_index);
+// }
+
+
+void IRC::remove_client(unsigned int client_index) {
+	int fd_to_close = getFds()[client_index].fd;
+	
+	close(fd_to_close);
+
+	if (client_index != getNbclients() - 1) {
+		getFds()[client_index] = getFds()[getNbclients() - 1];
+		_clients[client_index] = _clients[getNbclients() - 1];
+	}
+
+	decremente_nbclient();
+	
+	//print(RED << "Client " << client_index << " déconnecté." << RESET);
 }
 
 void IRC::handle_client_command(int client_index, const std::string &command) {
@@ -172,22 +397,6 @@ void IRC::handle_client_command(int client_index, const std::string &command) {
 		print(RED << "Commande inconnue " << command << RESET);
 }
 
-void IRC::remove_client(unsigned int client_index) {
-	int fd_to_close = getFds()[client_index].fd;
-
-	close(fd_to_close);
-
-	if (client_index != getNbclients() - 1) {
-		getFds()[client_index] = getFds()[getNbclients() - 1];
-		_clients[client_index] = _clients[getNbclients() - 1];
-	}
-
-	decremente_nbclient();
-
-	//print(RED << "Client " << client_index << " déconnecté." << RESET);
-}
-
-
 void IRC::handle_client_data(int client_index) {
 	char buffer[512] = {0};
 	int bytes_received = recv(getClientfd(client_index), buffer, sizeof(buffer) - 1, 0);
@@ -197,17 +406,17 @@ void IRC::handle_client_data(int client_index) {
 		return;
 	}
 	
+	_client_buffers[client_index] += std::string(buffer, bytes_received);
 
-	std::string tmp(buffer);
-	tmp.erase(std::remove(tmp.begin(), tmp.end(), '\r'), tmp.end());
+	size_t pos;
 
-	std::istringstream iss(tmp);
-	std::string command;
-	while (std::getline(iss, command)) {
-		if (!command.empty()) {
-			print(YELLOW << "Commande reçue: [" << command << "]" << RESET);
-			handle_client_command(client_index, command);
-		}
+	while ((pos = _client_buffers[client_index].find('\n')) != std::string::npos) {
+		std::string cmd = _client_buffers[client_index].substr(0, pos);
+		_client_buffers[client_index].erase(0, pos + 1); // erase cmd 
+
+		cmd.erase(std::remove(cmd.begin(), cmd.end(), '\r'), cmd.end());
+		print(YELLOW << "Commande reçue: [" << cmd << "]" << RESET);
+		handle_client_command(client_index, cmd);
 	}
 }
 
@@ -238,7 +447,10 @@ IRC* g_irc = NULL;
 void	sign_handler(int signum) {
 	print(RED << "\nCaught Ctrl + C (signal " << signum << "), cleaning up..." << RESET);
 	if (g_irc) {
+		print("here");
+		g_irc->cleanup();
 		g_irc->clearCommands();
+		g_irc->clearClientBuffers();
 		for (unsigned int i = 0; i < g_irc->getNbclients(); i++)
 			close(g_irc->getFds()[i].fd);
 	}
@@ -252,12 +464,7 @@ int main(int ac, char **av) {
 	IRC irc(atoi(av[1]), av[2]);
 	g_irc = &irc;
 	irc.init_cmds();
-	
-	// struct sigaction sigIntHandler;
-	// sigIntHandler.sa_handler = sign_handler;
-	// sigemptyset(&sigIntHandler.sa_mask);
-	// sigIntHandler.sa_flags = 0;
-	// sigaction(SIGINT, &sigIntHandler, NULL);
+
 	signal(SIGINT, sign_handler);
 	
 	int server_fd = irc.init_server_socket();
